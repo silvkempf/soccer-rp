@@ -1,0 +1,25 @@
+library(tidyverse)
+#library(tidymodels)
+library(dplyr)
+library(purrr)
+library(rvest)
+
+url <- "https://www.fussballdaten.de/bundesliga/2023/kaderwerte/"
+
+url %>% read_html() %>% html_table(fill = TRUE, header = TRUE) -> table
+table %>% data.frame()-> mydata #%>% mutate(Markwert = as.numeric()) -> data
+
+convert_to_numeric <- function(x) {
+  if (grepl("Mrd", x, fixed = TRUE)) {
+    numeric_value <- as.numeric(gsub(",", ".", gsub(" Mrd. €", "", x))) * 1000
+  } else {
+    numeric_value <- as.numeric(gsub(",", ".", gsub(" Mio. €", "", x)))
+  }
+  return(numeric_value)
+}
+
+# Applying the function to the 'Value' column in the data frame
+mydata$Markwert <- sapply(mydata$Markwert, convert_to_numeric)
+
+mydata1 <- mydata %>% mutate(Score = (Markwert / 10)*0.2)
+mydata1$Score <- round(mydata1$Score)
